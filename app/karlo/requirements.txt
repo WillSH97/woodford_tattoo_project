@@ -1,0 +1,8 @@
+fastapi==0.110.1
+pillow==10.4.0
+uuid==1.30
+torch==2.3.1
+diffusers==0.31.0
+transformers==4.43.3
+accelerate==0.31.0
+uvicorn==0.29.0
