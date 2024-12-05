@@ -1,0 +1,61 @@
+services:
+  karlo:
+    build:
+      context: ./karlo
+      dockerfile: ./Dockerfile
+      platforms: 
+        - linux/amd64
+    ports:
+      - "9001:9001"
+    command: uvicorn karlo_server:app --host 0.0.0.0 --port 9001 --timeout-keep-alive 600
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+                - utility
+                - compute
+
+  sd-upscale:
+    build:
+      context: ./SDupscale
+      dockerfile: ./Dockerfile
+      platforms: 
+        - linux/amd64
+    environment:
+      - KARLO_API_BASE_URL=http://karlo:9001
+    depends_on:
+      - karlo
+    ports:
+      - "1337:1337"
+    command: uvicorn SDupscale_server:app --host 0.0.0.0 --port 1337 --timeout-keep-alive 600
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+                - utility
+                - compute
+                
+  streamlit-app:
+    build:
+      context: ./streamlit_gui
+      dockerfile: ./Dockerfile
+      platforms: 
+        - linux/amd64
+    environment:
+      - KARLO_API_BASE_URL=http://karlo:9001
+      - UPSCALE_API_BASE_UR=http://sd-upscale:1337
+    depends_on:
+      - karlo
+      - sd-upscale
+    ports:
+      - "8501:8501"
+    command: streamlit run streamlit_server.py
+
